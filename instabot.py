@@ -1,11 +1,32 @@
 import requests, urllib
 
+'''This program uses Instagram API to handle accounts'''
+
+# Token Owner: gaur_abhishek
+# Insta Users: vivek3273, vivekkumarsingh3075, streethustler_1, vikas__mittal
+
+'''For security reasons, the Access Token is stored on the local machine'''
+
 with open('token.txt') as file:
     APP_ACCESS_TOKEN = file.read()
 
 BASE_URL = 'https://api.instagram.com/v1/'
 
-'''Function declaration to get your own info '''
+# The main menu of the application
+
+main_menu = ['Welcome to your main menu. Here are your options',
+                 '1. My details',
+                 '2. Details of other users',
+                 '3. My recent post',
+                 '4. Post I Liked',
+                 '5. Recent post of other users',
+                 '6. Like a post',
+                 "7. Get list of people who've liked a post",
+                 '8. Comment on a post',
+                 '9. Get list of comment(s) on a post',
+                 '10. Exit']
+
+# Function to get the details of the token owner
 
 
 def self_info():
@@ -23,6 +44,8 @@ def self_info():
     else:
         print 'Status code other than 200 received!'
 
+# Function to get user id of the sandbox users
+
 
 def get_user_id(insta_username):
     request_url = (BASE_URL + 'users/search?q=%s&access_token=%s') % (insta_username, APP_ACCESS_TOKEN)
@@ -38,10 +61,7 @@ def get_user_id(insta_username):
         print 'Status code other than 200 received!'
         exit()
 
-
-'''
-Function declaration to get the info of a user by username
-'''
+# Function to get details of the token owner
 
 
 def get_user_info(insta_username):
@@ -64,32 +84,41 @@ def get_user_info(insta_username):
     else:
         print 'Status code other than 200 received!'
 
-
-'''
-Function declaration to get your recent post
-'''
+# Function to download a post on the local machine
 
 
-def get_own_post():
-    request_url = (BASE_URL + 'users/self/media/recent/?access_token=%s') % APP_ACCESS_TOKEN
-    print 'GET request url : %s' % request_url
-    own_media = requests.get(request_url).json()
+def download_post(request_url):
+    media = requests.get(request_url).json()
 
-    if own_media['meta']['code'] == 200:
-        if len(own_media['data']):
-            image_name = own_media['data'][0]['id'] + '.jpeg'
-            image_url = own_media['data'][0]['images']['standard_resolution']['url']
-            urllib.urlretrieve(image_url, image_name)
-            print 'Your image has been downloaded!'
+    if media['meta']['code'] == 200:
+        if len(media['data']):
+
+            # To check if the media is image or not
+            if media['data'][0]['type'] == 'image':
+                image_name = media['data'][0]['id'] + '.jpeg'
+                image_url = media['data'][0]['images']['standard_resolution']['url']
+                urllib.urlretrieve(image_url, image_name)
+                print 'The post  has been downloaded!'
+
+            # To check if the media is a video or not
+            elif media['data'][0]['type'] == 'video':
+                video_name = media['data'][0]['id'] + '.mp4'
+                video_url = media['data'][0]['videos']['standard_resolution']['url']
+                urllib.urlretrieve(video_url, video_name)
+                print 'The post has been downloaded'
         else:
             print 'Post does not exist!'
     else:
         print 'Status code other than 200 received!'
 
+# Function to get the latest post of the token owner
 
-'''
-Function declaration to get the recent post of a user by username
-'''
+
+def get_own_post():
+    request_url = (BASE_URL + 'users/self/media/recent/?access_token=%s') % APP_ACCESS_TOKEN
+    download_post(request_url)
+
+# Function to get the latest post of the sandbox users
 
 
 def get_user_post(insta_username):
@@ -98,24 +127,9 @@ def get_user_post(insta_username):
         print 'User does not exist!'
         exit()
     request_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, APP_ACCESS_TOKEN)
-    print 'GET request url : %s' % request_url
-    user_media = requests.get(request_url).json()
+    download_post(request_url)
 
-    if user_media['meta']['code'] == 200:
-        if len(user_media['data']):
-            image_name = user_media['data'][0]['id'] + '.jpeg'
-            image_url = user_media['data'][0]['images']['standard_resolution']['url']
-            urllib.urlretrieve(image_url, image_name)
-            print 'Your image has been downloaded!'
-        else:
-            print 'Post does not exist!'
-    else:
-        print 'Status code other than 200 received!'
-
-'''
-Function declaration to get the ID of the recent post of a user by username
-'''
-
+# Function to get the post id of the media
 
 def get_post_id(insta_username):
     user_id = get_user_id(insta_username)
@@ -123,7 +137,6 @@ def get_post_id(insta_username):
         print 'User does not exist!'
         exit()
     request_url = (BASE_URL + 'users/%s/media/recent/?access_token=%s') % (user_id, APP_ACCESS_TOKEN)
-    # print 'GET request url : %s' % (request_url)
     user_media = requests.get(request_url).json()
 
     if user_media['meta']['code'] == 200:
@@ -136,28 +149,20 @@ def get_post_id(insta_username):
         print 'Status code other than 200 received!'
         exit()
 
-
-
-'''
-Function declaration to like the recent post of a user
-'''
+# Function to like a post
 
 
 def like_a_post(insta_username):
     media_id = get_post_id(insta_username)
     request_url = (BASE_URL + 'media/%s/likes') % media_id
     payload = {"access_token": APP_ACCESS_TOKEN}
-    # print 'POST request url : %s' % (request_url)
     post_a_like = requests.post(request_url, payload).json()
     if post_a_like['meta']['code'] == 200:
         print 'Like was successful!'
     else:
         print 'Your like was unsuccessful. Try again!'
 
-
-'''
-Function declaration to make a comment on the recent post of the user
-'''
+# Function to post a comment
 
 
 def post_a_comment(insta_username):
@@ -165,7 +170,6 @@ def post_a_comment(insta_username):
     comment_text = raw_input("Your comment: ")
     payload = {"access_token": APP_ACCESS_TOKEN, "text": comment_text}
     request_url = (BASE_URL + 'media/%s/comments') % media_id
-    # print 'POST request url : %s' % (request_url)
 
     make_comment = requests.post(request_url, payload).json()
 
@@ -174,9 +178,7 @@ def post_a_comment(insta_username):
     else:
         print "Unable to add comment. Try again!"
 
-'''
-Function declaration to make delete negative comments from the recent post
-'''
+# Function to get the list of comments on a post
 
 
 def get_comment_list(insta_username):
@@ -189,6 +191,8 @@ def get_comment_list(insta_username):
             for i in range(0, len(comment_list['data'])):
                 print comment_list['data'][i]['text']
 
+# Function to get the list of people who've liked the post
+
 
 def get_like_list(insta_username):
     media_id = get_post_id(insta_username)
@@ -200,48 +204,40 @@ def get_like_list(insta_username):
             for i in range(0, len(like_list['data'])):
                 print like_list['data'][i]['username']
 
+# Function to get the post liked by the token owner
+
+
+def get_liked_post():
+    request_url = (BASE_URL + 'users/self/media/liked?access_token=%s') % APP_ACCESS_TOKEN
+    download_post(request_url)
+
+
+menu_functions = [self_info, get_user_info, get_own_post, get_liked_post, get_user_post, like_a_post,
+                          get_like_list, post_a_comment, get_comment_list, exit]
+
+accepted_values = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+
+# Function to start the bot
+
 
 def start_bot():
     while True:
-        print '\n'
-        print 'Hey! Welcome to instaBot!'
-        print 'Here are your menu options:'
-        print "a.Get your own details\n"
-        print "b.Get details of a user by username\n"
-        print "c.Get your own recent post\n"
-        print "d.Get the recent post of a user by username\n"
-        print "e.Get a list of people who have liked the recent post of a user\n"
-        print "f.Like the recent post of a user\n"
-        print "g.Get a list of comments on the recent post of a user\n"
-        print "h.Make a comment on the recent post of a user\n"
-        print "j.Exit"
+        for elem in main_menu:
+            print elem
 
-        choice = raw_input("Enter you choice: ")
-        if choice == "a":
-            self_info()
-        elif choice == "b":
-            insta_username = raw_input("Enter the username of the user: ")
-            get_user_info(insta_username)
-        elif choice == "c":
-            get_own_post()
-        elif choice == "d":
-            insta_username = raw_input("Enter the username of the user: ")
-            get_user_post(insta_username)
-        elif choice=="e":
-           insta_username = raw_input("Enter the username of the user: ")
-           get_like_list(insta_username)
-        elif choice=="f":
-           insta_username = raw_input("Enter the username of the user: ")
-           like_a_post(insta_username)
-        elif choice=="g":
-           insta_username = raw_input("Enter the username of the user: ")
-           get_comment_list(insta_username)
-        elif choice=="h":
-           insta_username = raw_input("Enter the username of the user: ")
-           post_a_comment(insta_username)
-        elif choice == "j":
-            exit()
+        select_from_menu = int(raw_input('What do you want to do ?\n'
+                                         'Please enter a value from (1-9)\n' ))
+
+        while select_from_menu not in accepted_values:
+            print 'Invalid Input'
+            select_from_menu = int(raw_input('What do you want to do ?\n'
+                                         'Please enter a value from (1-9)\n'))
+
+        get_menu_option = select_from_menu - 1
+        if get_menu_option == 0 or get_menu_option == 9 or get_menu_option == 3:
+            menu_functions[get_menu_option]()
         else:
-            print "wrong choice"
+            insta_username = raw_input('Enter the name of user you want details for :\n')
+            menu_functions[get_menu_option](insta_username)
 
 start_bot()
