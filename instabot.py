@@ -1,4 +1,5 @@
 import requests, urllib
+import matplotlib.pyplot as plt
 
 '''This program uses Instagram API to handle accounts'''
 
@@ -24,7 +25,10 @@ main_menu = ['Welcome to your main menu. Here are your options',
                  "7. Get list of people who've liked a post",
                  '8. Comment on a post',
                  '9. Get list of comment(s) on a post',
-                 '10. Exit']
+                 '10. Hashtag Analysis on matplotlib',
+                 '11. Exit']
+
+hashtag_counts = []
 
 # Function to get the details of the token owner
 
@@ -77,7 +81,7 @@ def get_user_info(insta_username):
         if len(user_info['data']):
             print 'Username: %s' % (user_info['data']['username'])
             print 'No. of followers: %s' % (user_info['data']['counts']['followed_by'])
-            print 'No. of people you are following: %s' % (user_info['data']['counts']['follows'])
+            print 'No. of people following: %s' % (user_info['data']['counts']['follows'])
             print 'No. of posts: %s' % (user_info['data']['counts']['media'])
         else:
             print 'There is no data for this user!'
@@ -211,11 +215,29 @@ def get_liked_post():
     request_url = (BASE_URL + 'users/self/media/liked?access_token=%s') % APP_ACCESS_TOKEN
     download_post(request_url)
 
+# To get hashtags from user and plot them on matplotlib
+
+
+def get_hashtags(hashtag_number):
+    i = 1
+    while i <= hashtag_number:
+        i = i + 1
+        tag_name = raw_input('Enter the tag you want to search for:\n'
+                             "No need to put '#'. Just enter the keyword\n")
+        request_url = (BASE_URL + 'tags/search?q=%s&access_token=%s') % (tag_name, APP_ACCESS_TOKEN)
+        tag_list = requests.get(request_url).json()
+        count = tag_list['data'][0]['media_count']
+        hashtag_counts.append(count)
+        print hashtag_counts
+        plt.plot([i-1], [count], 'gs')
+        plt.axis([0, hashtag_number + 1, 0, 200000000])
+    else:
+        plt.show()
 
 menu_functions = [self_info, get_user_info, get_own_post, get_liked_post, get_user_post, like_a_post,
-                          get_like_list, post_a_comment, get_comment_list, exit]
+                          get_like_list, post_a_comment, get_comment_list, get_hashtags, exit]
 
-accepted_values = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+accepted_values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 
 # Function to start the bot
 
@@ -226,18 +248,22 @@ def start_bot():
             print elem
 
         select_from_menu = int(raw_input('What do you want to do ?\n'
-                                         'Please enter a value from (1-9)\n' ))
+                                         'Please enter a value from (1-11)\n'))
 
         while select_from_menu not in accepted_values:
             print 'Invalid Input'
             select_from_menu = int(raw_input('What do you want to do ?\n'
-                                         'Please enter a value from (1-9)\n'))
+                                         'Please enter a value from (1-11)\n'))
 
         get_menu_option = select_from_menu - 1
-        if get_menu_option == 0 or get_menu_option == 9 or get_menu_option == 3:
+        if get_menu_option == 0 or get_menu_option == 8 or get_menu_option == 3 or get_menu_option == 10:
             menu_functions[get_menu_option]()
+
+        elif get_menu_option == 9:
+            hashtag_number = int(raw_input('Enter the number of hashtags you want to analyze'))
+            menu_functions[get_menu_option](hashtag_number)
         else:
-            insta_username = raw_input('Enter the name of user you want details for :\n')
+            insta_username = raw_input('Enter the name of user\n')
             menu_functions[get_menu_option](insta_username)
 
 start_bot()
