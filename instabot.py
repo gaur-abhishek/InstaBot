@@ -1,5 +1,7 @@
 import requests, urllib
 import matplotlib.pyplot as plt
+from wordcloud import WordCloud, STOPWORDS
+import simplejson
 
 '''This program uses Instagram API to handle accounts'''
 
@@ -26,9 +28,11 @@ main_menu = ['Welcome to your main menu. Here are your options',
                  '8. Comment on a post',
                  '9. Get list of comment(s) on a post',
                  '10. Hashtag Analysis on matplotlib',
-                 '11. Exit']
+                 '11. Create WordCloud',
+                 '12. Exit']
 
 hashtag_counts = []
+wordcloud_data = []
 
 # Function to get the details of the token owner
 
@@ -135,6 +139,7 @@ def get_user_post(insta_username):
 
 # Function to get the post id of the media
 
+
 def get_post_id(insta_username):
     user_id = get_user_id(insta_username)
     if user_id == None:
@@ -234,8 +239,27 @@ def get_hashtags(hashtag_number):
     else:
         plt.show()
 
+# To create a wordcloud based on a user's data
+
+
+def get_wordcloud(insta_username):
+    media_id = get_post_id(insta_username)
+    request_url = (BASE_URL + 'media/%s/comments/?access_token=%s') % (media_id, APP_ACCESS_TOKEN)
+    text = requests.get(request_url).json()
+    for i in range(0, len(text['data'])):
+        wordcloud_data.append(text['data'][i]['text'])
+    f = open('raw_data.txt', 'w')
+    simplejson.dump(wordcloud_data, f)
+    with open('raw_data.txt') as file:
+        string = file.read()
+    wordcloud = WordCloud(stopwords=STOPWORDS, background_color='white',width=1200, height=1000).generate(string)
+
+    plt.imshow(wordcloud)
+    plt.axis('off')
+    plt.show()
+
 menu_functions = [self_info, get_user_info, get_own_post, get_liked_post, get_user_post, like_a_post,
-                          get_like_list, post_a_comment, get_comment_list, get_hashtags, exit]
+                    get_like_list, post_a_comment, get_comment_list, get_hashtags,get_wordcloud, exit]
 
 accepted_values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 
@@ -256,7 +280,7 @@ def start_bot():
                                          'Please enter a value from (1-11)\n'))
 
         get_menu_option = select_from_menu - 1
-        if get_menu_option == 0 or get_menu_option == 8 or get_menu_option == 3 or get_menu_option == 10:
+        if get_menu_option == 0 or get_menu_option == 3 or get_menu_option == 11:
             menu_functions[get_menu_option]()
 
         elif get_menu_option == 9:
